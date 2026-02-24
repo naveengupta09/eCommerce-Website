@@ -33,8 +33,8 @@ async function loadData(){
 
 function initializeApp(){
     loadUserData();
-    loadCartData();
-    loadUserData();
+    LoadCartData();
+    LoadOrdersData();
     loadRecentlyViewed();
     renderCategories(); 
     showPage("home"); 
@@ -52,18 +52,20 @@ function showPage(pageId){
         targetPage.classList.remove("hidden") 
     }
 
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
     switch(pageId){ 
         case "home": 
             renderCategories(); 
             break; 
-        case "Cart": 
+        case "cart": 
             renderCart(); 
             break; 
-        case "order": 
+        case "orders": 
             renderOrders(); 
             break; 
         case "account": 
-            loadUserAccountPage(); 
+            localUserAccountPage(); 
             break; 
     } 
 }
@@ -149,7 +151,7 @@ function populateFilters(){
     })
 }
 
-function apllyFilters(){
+function applyFilters(){
     const sortBy = document.getElementById("sortBy").value;
     const maxPrice = parseInt(document.getElementById("priceRange").value);
     const selectedBrand = document.getElementById("brandFilter").value;
@@ -204,8 +206,8 @@ function renderProducts(products = filterProducts){
             ${product.rating}</div>
             <div class="product-price">
             <span class="current-price">₹${product.price}</span>
-            <span class="original-price>₹${product.originalPrice}</span>
-            <span class="discount">₹${product.discount}% OFF</span>
+            <span class="original-price">₹${product.originalPrice}</span>
+            <span class="discount">${product.discount}% OFF</span>
             </div>
         </div>`;
 
@@ -214,7 +216,7 @@ function renderProducts(products = filterProducts){
 }
 
 function showProduct(productId){
-    const product = product.find(p => p.id === productId);
+    const product = products.find(p => p.id === productId);
     if(!product)    return;
 
     if(!recentlyViewed.includes(productId)){
@@ -225,13 +227,13 @@ function showProduct(productId){
         saveRecentlyViewed();
     }
 
-    const productDetail = document.getElementById("productDetails");
+    const productDetail = document.getElementById("productDetail");
     const deliveryDate = new Date();
     deliveryDate.setDate(deliveryDate.getDate() + 7);
 
     productDetail.innerHTML = `
     <div>
-        <img> src="${product.image}" alt="${product.name}" class="product-image">
+        <img src="${product.image}" alt="${product.name}" class="product-image">
     </div>
     <div class="product-info">
         <h1>${product.name}</h1>
@@ -242,11 +244,11 @@ function showProduct(productId){
         <div class="product-price">
             <span class="current-price">₹${product.price}</span>
             <span class="original-price">₹${product.originalPrice}</span>
-            <span class="discont">₹${product.discount}% OFF</span>
+            <span class="discount">${product.discount}% OFF</span>
         </div>
         <div class="description">${product.description}</div>
 
-        <div class="product-option">
+        <div class="product-options">
             ${product.colors.length > 0 ? `
                 <div class="option-group">
                     <label>Color:</label>
@@ -273,16 +275,16 @@ function showProduct(productId){
             <h3>Delivery Address</h3>
             ${currentUser.address ? `<p>
                 ${currentUser.address}</p>
-                <button class="btn-secondary" onclick="showPage("account")">Change Address</button>
+                <button class="btn-secondary" onclick="showPage('account')">Change Address</button>
                 ` : `
                 <p>No address added</p>
-                <button class="btn-secondary" onclick="showPage("account")">Add Address</button>
+                <button class="btn-secondary" onclick="showPage('account')">Add Address</button>
                 `}
         </div>
 
         <div class="delivery-info">
                 <h4>Delivery Information</h4>
-                <p>🗣️ Delivery bt ${deliveryDate.toLocaleDateString()}</p>
+                <p>🚚 Delivery by ${deliveryDate.toLocaleDateString()}</p>
                 <p>10 Day's return policy</p>
                 <p>💰Cash on delivery available</p>
         </div>
@@ -321,13 +323,13 @@ function addToCart(productId){
     const product = products.find(p => p.id === productId);
     if(!product)    return;
 
-    const selectedColor = document.getElementById("selectedColor")?.value || " ";
-    const selectedSize = document.getElementById("seletedSize")?.value || " ";
+    const selectedColor = document.getElementById("selectedColor")?.value || "";
+    const selectedSize = document.getElementById("selectedSize")?.value || "";
 
     const existingItem = cart.find(items =>
-        item.id === productId && 
-        item.color === selectedColor &&
-        item.size === selectedSize
+        items.id === productId && 
+        items.color === selectedColor &&
+        items.size === selectedSize
     )
 
     if(existingItem){
@@ -341,8 +343,8 @@ function addToCart(productId){
             originalPrice:product.originalPrice,
             discount:product.discount,
             image:product.image,
-            color:product.color,
-            size:product.size,
+            color:selectedColor,
+            size:selectedSize,
             quantity :1
         })
     }
@@ -356,7 +358,7 @@ function renderCart(){
     const cartSummary = document.getElementById("cartSummary");
 
     if(cart.length === 0){
-        cartItems.innerHTML = '<p>Your cart is Empty. <a href="#" onclick="showPage(\'homr\')">Continue Shopping</a></p>';
+        cartItem.innerHTML = '<p>Your cart is Empty. <a href="#" onclick="showPage(\'home\')">Continue Shopping</a></p>';
         cartSummary.innerHTML = '';
         return;
     }
@@ -371,11 +373,11 @@ function renderCart(){
         totalOriginal +=itemOriginalTotal;
         totalDiscounted += itemTotal;
 
-        const cartItem = document.createElement("div");
-        cart.className = "cart-item";
-        cartItem.innerHTML = `
+        const cartItemElement = document.createElement("div");
+        cartItemElement.className = "cart-item";
+        cartItemElement.innerHTML = `
         <img src="${item.image}" alt="${item.name}">
-        <div class="cart-itemp-details">
+        <div class="cart-item-details">
             <h3>${item.name}</h3>
             <div class="product-brand">${item.brand}</div>
             ${item.color ? `<p>Color: ${item.color}</p>` : ""}
@@ -383,7 +385,7 @@ function renderCart(){
             <div class="product-price">
                 <span class="current-price">₹${item.price}</span>
                 <span class="original-price">₹${item.originalPrice}</span>
-                <span class="discount">₹${item.discount}% OFF</span>
+                <span class="discount">${item.discount}% OFF</span>
             </div>
             <div class="quantity-controls">
                 <button class="quantity-btn" onclick="updateQuantity(${index}, -1)">-</button>
@@ -395,42 +397,42 @@ function renderCart(){
         <button class="btn-secondary" onclick="removeFromCart(${index})">Remove</button>
         `;
 
-        cartItem.appendChild(cartItem);
+        cartItem.appendChild(cartItemElement);
     })
 
     const deliveryCharges = totalDiscounted > 500 ? 0 : 50 ;
     const finalTotal = totalDiscounted + deliveryCharges;
 
     cartSummary.innerHTML = `
+    <div style="padding: 24px;">
     <h3>Price Details</h3>
     <div class="summary-row">
         <span>Total MRP:</span>
         <span>₹${totalOriginal}</span>
     </div>
-    <h3>Price Details</h3>
     <div class="summary-row">
         <span>Discount:</span>
         <span>₹${totalOriginal - totalDiscounted}</span>
     </div>
-    <h3>Price Details</h3>
     <div class="summary-row">
         <span>Delivery Charges:</span>
-        <span>₹${deliveryCharges === 0 ? "FREE": "₹" + deliveryCharges}</span>
+        <span>${deliveryCharges === 0 ? "FREE": "₹" + deliveryCharges}</span>
     </div>
     <div class="summary-divider"></div>
-    <div class="summary-low summary-total">
+    <div class="summary-row summary-total">
         <span>Total Amount:</span>
         <span>₹${finalTotal}</span>
     </div>
 
-    <button class="btn-primary" onclick="proceedToChechout()" style="width:100%; margin-top:20px;">
+    <button class="btn-primary" onclick="proceedToCheckout()" style="width:100%; margin-top:20px;">
     Place Order</button>
+    </div>
     `;
 }
 
 function updateQuantity(index, Change, newValue = null){
     if(newValue !== null){
-        cart[index].quantity =Math.max(1,parent(newValue) || 1);
+        cart[index].quantity = Math.max(1, parseInt(newValue) || 1);
     }else{
         cart[index].quantity = Math.max(1, cart[index].quantity + Change);
     }
@@ -551,7 +553,7 @@ function saveOrderDetails(){
     const address = document.getElementById("orderAddress").value.trim();
 
     if(!name || !phone || !address){
-        alert("Phone fill all required fiels");
+        alert("Please fill all required fields");
         return;
     }
 
@@ -559,7 +561,7 @@ function saveOrderDetails(){
         alert('Please Enter a valid name {2-50} characters, letters only.');
         return;
     }
-    if(!validateName(phone)){
+    if(!validatePhone(phone)){
         alert('Please enter a valid 10-digit phone number.');
         return;
     }
@@ -591,14 +593,14 @@ function placeOrder(){
     const deliveryDate = new Date();
     deliveryDate.setDate(deliveryDate.getDate() + 7);
 
-    const order = {
+        const order = {
         id:orderId,
         items:[...cart],
         total:cart.reduce((total,item)=> total + (item.price * item.quantity), 0),
         deliveryCharges : cart.reduce((total,item)=> total + (item.price * item.quantity), 0) > 500 ? 0 : 50,
-        paymentMethod:paymentMetod,
-        orderDate:orderDate,
-        deliveryDate:deliveryDate,
+        paymentMethod:paymentMethod,
+        orderDate:orderDate.toISOString(),
+        deliveryDate:deliveryDate.toISOString(),
         status:"confirmed",
         address:currentUser.address,
         phone:currentUser.phone,
@@ -614,11 +616,11 @@ function placeOrder(){
 
     document.getElementById("orderSteps").innerHTML = `
     <div class="order-success">
-        <h1>🎉 Order Placed SuccessFully!</h1>
+        <h1>🎉 Order Placed Successfully!</h1>
         <p>Your order ID is :<strong>${orderId}</strong></p>
         <p>Expected delivery: ${deliveryDate.toLocaleDateString()}</p>
-        <button class="btn-primary" onclick="showPage("orders")">View My Orders</button>
-        <button class="btn-secondary" onclick="showPage("home")">Continue Shopping</button>
+        <button class="btn-primary" onclick="showPage('orders')">View My Orders</button>
+        <button class="btn-secondary" onclick="showPage('home')">Continue Shopping</button>
     </div>
     `;
 }
@@ -637,7 +639,9 @@ function renderOrders(){
 
     sortedOrders.forEach(order =>{
         const currentDate = new Date();
-        const isDeliverd = currentDate > order.deliveryDate;
+        const orderDateObj = order.orderDate instanceof Date ? order.orderDate : new Date(order.orderDate);
+        const deliveryDateObj = order.deliveryDate instanceof Date ? order.deliveryDate : new Date(order.deliveryDate);
+        const isDelivered = currentDate > deliveryDateObj;
 
         const orderDiv = document.createElement("div");
         orderDiv.className = "order-card";
@@ -653,24 +657,24 @@ function renderOrders(){
                     ${item.color ? `<p>Color: ${item.color}</p>`: ""}
                     ${item.size ? `<p>Size: ${item.size}</p>`: ""}
                     <p>Quantity: ${item.quantity}</p>
-                    <p>Price: ₹${item.price * item.quantity} ${item.quantity}</p>
+                    <p>Price: ₹${item.price * item.quantity}</p>
                 </div>
             </div>
             `;
         })
 
         orderDiv.innerHTML = `
-        <div class="order-header" onclick="toggleOrderDetails("${order.id}")">
+        <div class="order-header" onclick="toggleOrderDetails('${order.id}')">
             <div class="order-summary">
-                <h3>Order ID:${order.id}</h3>
-                <span class="status-badge ${isDeliverd ? "delivered":"on-way"}">
-                    ${isDeliverd ? "Delivered" : "On the way"}
+                <h3>Order ID: ${order.id}</h3>
+                <span class="status-badge ${isDelivered ? "delivered":"on-way"}">
+                    ${isDelivered ? "Delivered" : "On the way"}
                 </span>
             </div>
             <div class="order-meta">
-                <p><strong>Order Date:</strong>${order.orderDate.toLocaleDateString()}</p>
-                <p><strong>Total:</strong>${order.total + order.deliveryCharges}</p>
-                <p><strong>Items:</strong>${order.items.length} item.${order.items.length > 1 ? "s" : ""}</p>
+                <p><strong>Order Date:</strong> ${orderDateObj.toLocaleDateString()}</p>
+                <p><strong>Total:</strong> ₹${order.total + order.deliveryCharges}</p>
+                <p><strong>Items:</strong> ${order.items.length} item${order.items.length > 1 ? "s" : ""}</p>
             </div>
             <div class="dropdown-arrow">
                 <span class="arrow-icon">⬇</span>
@@ -678,8 +682,8 @@ function renderOrders(){
         </div>
         <div class="order-details" id="details-${order.id}" style="display: none;">
             <div class="order-info">
-                <p><strong>Delivery Date:</strong>${order.deliveryDate.toLocaleDateString()}</p>
-                <p><strong>Payment Method:</strong>${order.paymentMethod.toUpperCase()}</p>
+                <p><strong>Delivery Date:</strong> ${deliveryDateObj.toLocaleDateString()}</p>
+                <p><strong>Payment Method:</strong> ${order.paymentMethod.toUpperCase()}</p>
 
                 <div class="address-section">
                     <h4>Delivery Address:</h4>
@@ -694,7 +698,7 @@ function renderOrders(){
                 <div class="cart-summary">
                     <div class="summary-row">
                         <span>Items Total:</span>
-                        <span>${order.total}</span>
+                        <span>₹${order.total}</span>
                     </div>
                     <div class="summary-row">
                         <span>Delivery charges:</span>
@@ -703,7 +707,7 @@ function renderOrders(){
                     <div class="summary-divider"></div>
                     <div class="summary-row summary-total">
                         <span>Total Paid:</span>
-                        <span>${order.total + order.deliveryCharges}</span>
+                        <span>₹${order.total + order.deliveryCharges}</span>
                     </div>
                 </div>
             </div>
@@ -715,14 +719,14 @@ function renderOrders(){
 
 function toggleOrderDetails(orderId){
     const detailsDiv = document.getElementById(`details-${orderId}`);
-    const arrowIcon = detailsDiv.previousElementSibling.querySelector("arrrow-icon");
+    const arrowIcon = detailsDiv.previousElementSibling.querySelector(".arrow-icon");
 
     if(detailsDiv.style.display === "none"){
-        detailsDiv.style.display ="block";
-        arrowIcon.style.transform = "rotate(180deg";
+        detailsDiv.style.display = "block";
+        arrowIcon.style.transform = "rotate(180deg)";
     }else {
-        detailsDiv.style.display ="none";
-        arrowIcon.style.transform = "rotate(0deg";
+        detailsDiv.style.display = "none";
+        arrowIcon.style.transform = "rotate(0deg)";
     }
 }
 
@@ -731,7 +735,7 @@ function saveOrderData(){
 }
 
 function saveUserData(){
-    localStorage.setItem("userData", JSON.stringify(currentUserData));
+    localStorage.setItem("userData", JSON.stringify(currentUser));
 }
 
 function localUserAccountPage(){
@@ -751,14 +755,16 @@ function saveUserInfo(){
         alert('Please Enter a valid name {2-50} characters, letters only.');
         return;
     }
-    if(email && !validateName(email)){
+    if(email && !validateEmail(email)){
         alert('Please enter a valid email address.');
         return;
     }
-    if(phone && !validateName(phone)){
+    if(phone && !validatePhone(phone)){
         alert('Please enter a valid 10-digit phone number.');
         return;
     }
+
+    const address = document.getElementById("userAddress").value.trim();
 
     currentUser.name = name;
     currentUser.email = email;
@@ -776,9 +782,10 @@ function removeFromCart(index){
     renderCart();
 }
 
-function proceedToChechout(){
+function proceedToCheckout(){
     currentOrderSteps = 1;
     showPage('order');
+    renderOrderSteps();
 }
 
 function updateCartCount(){
@@ -791,7 +798,7 @@ function saveCartData(){
 }
 
 function saveRecentlyViewed(){
-    localStorage.setItem("recentlyViewedData", JSON.stringify(recentlyViewedData));
+    localStorage.setItem("recentlyViewedData", JSON.stringify(recentlyViewed));
 }
 
 function loadUserData(){
@@ -801,10 +808,11 @@ function loadUserData(){
     }
 }
 
-function LoadCardData(){
+function LoadCartData(){
     const cartData = localStorage.getItem("cartData");
-    if(recentlyViewedData){
+    if(cartData){
         cart = JSON.parse(cartData);
+        updateCartCount();
     }
 }
 
@@ -819,6 +827,6 @@ function LoadOrdersData(){
 function loadRecentlyViewed(){
     const recentlyViewedData = localStorage.getItem("recentlyViewedData");
     if(recentlyViewedData){
-        recentlyViewedData = JSON.parse(recentlyViewedData);
+        recentlyViewed = JSON.parse(recentlyViewedData);
     }
 }
