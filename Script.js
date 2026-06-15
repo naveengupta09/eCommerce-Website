@@ -88,7 +88,7 @@ function searchProducts(){
         product.description.toLowerCase().includes(searchTerm)
     );
 
-    document.getElementById("categoryTitle").textContent = `Search results for"${searchTerm}"`;
+    document.getElementById("categoryTitle").textContent = `Search results for "${searchTerm}"`;
     populateFilters();
     renderProducts();
     showPage("category");
@@ -115,7 +115,7 @@ function renderCategories(){
                 cardContent += `<p>You have ${recentlyViewed.length} recently viewed item(s)</p>`
             }
         }
-        cardContent += `</div><a href="#" class="category-bt">View Products</a>`;
+        cardContent += `</div><a href="#" class="category-bt" onclick="return false;">View Products</a>`;
 
         categoryCard.innerHTML = cardContent;
         categoryGrid.appendChild(categoryCard);
@@ -156,7 +156,7 @@ function applyFilters(){
     const maxPrice = parseInt(document.getElementById("priceRange").value);
     const selectedBrand = document.getElementById("brandFilter").value;
 
-    document.getElementById("priceValue").textContent = "₹" + maxPrice;
+    document.getElementById("priceValue").textContent = "₹ " + maxPrice;
 
     let filtered = filterProducts.filter(product => {
         if(product.price > maxPrice)    return false;
@@ -258,7 +258,7 @@ function showProduct(productId){
                         ).join("")}
                     </select>
                 </div>
-            `: " "}
+            `: ""}
 
             ${product.sizes.length > 0 ? `
                 <div class="option-group">
@@ -269,7 +269,7 @@ function showProduct(productId){
                         ).join("")}
                     </select>
                 </div>
-            `: " "}
+            `: ""}
         </div>
         <div class="address-section">
             <h3>Delivery Address</h3>
@@ -485,7 +485,7 @@ function renderOrderSteps(){
                     ${item.color ? `<p>Color: ${item.color}</p>`: ""}
                     ${item.size ? `<p>Size: ${item.size}</p>`: ""}
                     <p>Quantity: ${item.quantity}</p>
-                    <p>Price: ₹${item.price * item.quantity} ${item.quantity}</p>
+                    <p>Price: ₹${item.price * item.quantity}</p>
                 </div>
             </div>
             `;
